@@ -21,17 +21,14 @@ class Simulation(Canvas):
         self.particles += [part]
 
     def step(self, time):
-##        print()
-##        print(self.find_all())
-##        print(self.particles)
         next_particles = [0 for x in self.particles]
         for index, shape in enumerate(self.particles):
             #print(shape)
             temp = Particle()
             temp.x = shape.x + shape.xVel * time
             temp.y = shape.y + shape.yVel * time
-            temp.xVel = shape.xAccel * time
-            temp.yVel = shape.yAccel * time
+            temp.xVel = shape.xVel + shape.xAccel * time
+            temp.yVel = shape.yVel + shape.yAccel * time
             temp.xAccel = 0
             temp.yAccel = 0
             for idx, s in enumerate(self.particles):
@@ -41,22 +38,18 @@ class Simulation(Canvas):
                     temp.xAccel += tmp * (s.x - shape.x)
                     temp.yAccel += tmp * (s.y - shape.y)
             next_particles[index] = temp
-            """
-            shape.x += shape.xVel * time
-            shape.y += shape.yVel * time
-            shape.xVel += shape.xAccel * time
-            shape.yVel += shape.yAccel * time
-            shape.xAccel = newXAccel#shape.xForce / shape.mass
-            shape.yAccel = newYAccel#shape.yForce / shape.mass
-            shape.xForce = newXForce
-            shape.yForce = newYForce"""
         for index, shape in enumerate(self.particles):
-            shape.get_attributes(next_particles[index])
-        self.particles = next_particles[:]
+            if not shape.stationary:
+                self.move(index + 1, next_particles[index].x - shape.x, next_particles[index].y - shape.y)
+                shape.get_attributes(next_particles[index])
+
+    def make_lines(self):
+        for shape in self.particles:
+            self.create_line(shape.x, shape.y, shape.x+1, shape.y+1, fill=shape.color)
             
 
 class Particle:
-    def __init__(self, x=0, y=0, xVel=0, yVel=0, size=10, color=None):
+    def __init__(self, x=0, y=0, xVel=0, yVel=0, size=10, color=None, stationary=False):
         self.x = x
         self.y = y
         self.size = size
@@ -68,8 +61,10 @@ class Particle:
         self.yForce = 0
         self.xAccel = 0
         self.yAccel = 0
+        self.color = color
+        self.stationary = stationary
 
-    def __str__(self):
+    def __repr__(self):
         return 'Particle at ({0}, {1}), accel ({2}, {3}), speed ({4}, {5}) and forces ({6}, {7})'.format(self.x, self.y,
                                                                                                          self.xAccel, self.yAccel,
                                                                                                          self.xVel, self.yVel,
@@ -86,34 +81,3 @@ class Particle:
     
     def dist(self, p2):
         return math.sqrt((self.x - p2.x) ** 2 + (self.y - p2.y) ** 2)
-
-        
-
-root = Tk()
-canvas = Simulation(root, bg='white', width=1000, height=1000)
-p = Particle(x=500, y=450)
-p2 = Particle(x=500, y=550)
-canvas.add(p, fill='blue')
-canvas.add(p2)
-canvas.pack()
-
-def update(a=0):
-    print('updating', p.y, p2.y)
-    for i in range(500):
-        canvas.step(1)
-    root.after(100, update)
-"""
-print([i.__str__() for i in canvas.particles])
-canvas.step(500000)
-print([i.__str__() for i in canvas.particles])
-canvas.step(500000)
-print([i.__str__() for i in canvas.particles])
-canvas.step(500000)
-print([i.__str__() for i in canvas.particles])
-canvas.step(500000)"""
-print([i.__str__() for i in canvas.particles])
-
-canvas.pack()
-root.wm_title('Particle Simulation')
-root.after(100, update)
-root.mainloop()
